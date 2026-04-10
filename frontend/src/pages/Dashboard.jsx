@@ -5,7 +5,7 @@ import axios from 'axios';
 import useSocket from '../hooks/useSocket';
 import BedTile from '../components/BedTile';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function Dashboard({ navigateToAlerts, onNavigateReset }) {
   const [buildings, setBuildings] = useState({});
