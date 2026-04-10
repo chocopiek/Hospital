@@ -4,7 +4,7 @@ import axios from 'axios';
 import useSocket from '../hooks/useSocket';
 import AlertRow from '../components/AlertRow';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function Alerts() {
   const [alerts, setAlerts] = useState([]);
