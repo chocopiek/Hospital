@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function AlertRow({ alert, onAcknowledge }) {
   const [isLoading, setIsLoading] = useState(false);
