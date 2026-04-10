@@ -1,0 +1,36 @@
+{
+  "name": "hospital-iot-backend",
+  "version": "1.0.0",
+  "description": "Hospital IoT Monitoring Backend - Real-time vital signs tracking",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "simulate": "node simulate_esp32.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "sqlite": "^5.0.1",
+    "sqlite3": "^5.1.6",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "hospital",
+    "iot",
+    "esp32",
+    "monitoring",
+    "vitals",
+    "real-time"
+  ],
+  "author": "",
+  "license": "MIT"
+}

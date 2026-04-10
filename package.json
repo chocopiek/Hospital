@@ -1,0 +1,28 @@
+{
+  "name": "hospital-iot-monitoring",
+  "version": "1.0.0",
+  "description": "Hospital IoT Monitoring System with Real-time Vital Signs",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd frontend && npm install",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "start": "vercel dev"
+  },
+  "keywords": [
+    "hospital",
+    "iot",
+    "monitoring",
+    "health",
+    "esp32"
+  ],
+  "author": "Hospital IoT Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^latest"
+  }
+}
