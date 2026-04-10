@@ -16,7 +16,7 @@ import useSocket from '../hooks/useSocket';
 import VitalCard from '../components/VitalCard';
 import AlertRow from '../components/AlertRow';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function BedDetail() {
   const { device_id } = useParams();
