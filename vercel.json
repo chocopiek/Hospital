@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "env": {
     "NODE_ENV": "production"
@@ -13,16 +13,6 @@
     {
       "src": "/(.*)",
       "dest": "/frontend/dist/index.html"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/dist/$1"
     }
   ],
   "headers": [
