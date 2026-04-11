@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
         const payload = await parseBody(req);
         console.log('POST /api/patients - Received payload:', payload);
         
-        const { device_id, name, age, gender, room_number, notes } = payload;
+        const { device_id, name, age, diagnosis, notes } = payload;
 
         if (!device_id || !name) {
           console.warn('POST /api/patients - Missing required fields');
@@ -98,9 +98,7 @@ module.exports = async (req, res) => {
             .update({
               name,
               age: age || null,
-              gender: gender || null,
-              room_number: room_number || null,
-              notes: notes || null,
+              diagnosis: diagnosis || notes || null,
               updated_at: new Date().toISOString(),
             })
             .eq('device_id', device_id)
@@ -118,9 +116,7 @@ module.exports = async (req, res) => {
               device_id,
               name,
               age: age || null,
-              gender: gender || null,
-              room_number: room_number || null,
-              notes: notes || null,
+              diagnosis: diagnosis || notes || null,
             })
             .select()
             .single();
