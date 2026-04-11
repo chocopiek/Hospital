@@ -42,7 +42,6 @@ const parseBody = async (req) => {
 /**
  * GET /api/patients - Get all patients
  * POST /api/patients - Create or update patient
- * DELETE /api/patients/:device_id - Delete patient
  */
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -163,30 +162,6 @@ module.exports = async (req, res) => {
         console.error('Error in POST /api/patients:', error.message, error.stack);
         return sendError(res, 500, error);
       }
-    }
-
-    // DELETE - Remove patient
-    if (req.method === 'DELETE') {
-      // Extract device_id from URL path
-      const pathParts = req.url.split('/').filter(Boolean);
-      const device_id = pathParts[pathParts.length - 1];
-
-      if (!device_id) {
-        return sendError(res, 400, { message: 'device_id is required' });
-      }
-
-      const { error } = await supabase
-        .from('patients')
-        .delete()
-        .eq('device_id', device_id);
-
-      if (error) {
-        throw error;
-      }
-
-      return sendResponse(res, 200, {
-        message: 'Patient deleted',
-      });
     }
 
     // Method not allowed
