@@ -52,12 +52,30 @@ export function Settings() {
         }),
       });
 
+      // Handle error responses
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        } catch (e) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
       }
 
-      const data = await response.json();
+      // Parse success response
+      let data;
+      try {
+        const text = await response.text();
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        throw new Error('Invalid response from server: ' + e.message);
+      }
+
+      // Add patient to list if we got valid data
       if (data.patient) {
         setPatients([...patients, data.patient]);
       }
@@ -94,12 +112,30 @@ export function Settings() {
         }),
       });
 
+      // Handle error responses
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        } catch (e) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
       }
 
-      const data = await response.json();
+      // Parse success response
+      let data;
+      try {
+        const text = await response.text();
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        throw new Error('Invalid response from server: ' + e.message);
+      }
+
+      // Update patient in list if we got valid data
       if (data.patient) {
         setPatients(
           patients.map((p) =>

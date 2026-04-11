@@ -5,24 +5,37 @@ const { supabase, sendResponse, sendError, handleOptions } = require('./_supabas
  */
 const parseBody = async (req) => {
   return new Promise((resolve, reject) => {
-    let body = '';
-    
-    // If body is already parsed (Vercel with middleware)
-    if (req.body) {
-      resolve(typeof req.body === 'string' ? JSON.parse(req.body) : req.body);
+    // If body is already parsed (Vercel with built-in parsing)
+    if (req.body !== undefined) {
+      try {
+        const parsed = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        resolve(parsed);
+      } catch (e) {
+        reject(new Error(`Invalid JSON in req.body: ${e.message}`));
+      }
       return;
     }
     
-    // Otherwise, read from stream
-    req.on('data', chunk => body += chunk.toString());
+    // Collect chunks from stream
+    const chunks = [];
+    
+    req.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+    
     req.on('end', () => {
       try {
-        resolve(body ? JSON.parse(body) : {});
+        const body = chunks.length > 0 ? Buffer.concat(chunks).toString('utf-8') : '';
+        const parsed = body.trim() ? JSON.parse(body) : {};
+        resolve(parsed);
       } catch (e) {
-        reject(new Error('Invalid JSON body: ' + e.message));
+        reject(new Error(`Failed to parse request body: ${e.message}`));
       }
     });
-    req.once('error', reject);
+    
+    req.on('error', (err) => {
+      reject(new Error(`Request stream error: ${err.message}`));
+    });
   });
 };
 
@@ -55,21 +68,30 @@ module.exports = async (req, res) => {
     if (req.method === 'POST') {
       try {
         const payload = await parseBody(req);
+        console.log('POST /api/patients - Received payload:', payload);
+        
         const { device_id, name, age, gender, room_number, notes } = payload;
 
         if (!device_id || !name) {
+          console.warn('POST /api/patients - Missing required fields');
           return sendError(res, 400, { message: 'device_id and name are required' });
         }
 
         // Check if patient already exists
-        const { data: existing } = await supabase
+        const { data: existing, error: checkError } = await supabase
           .from('patients')
           .select('id')
           .eq('device_id', device_id)
           .single();
 
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 = no rows found, which is expected if patient doesn't exist
+          throw checkError;
+        }
+
         let result;
         if (existing) {
+          console.log('POST /api/patients - Updating existing patient:', device_id);
           // Update existing patient
           const { data, error } = await supabase
             .from('patients')
@@ -88,6 +110,7 @@ module.exports = async (req, res) => {
           if (error) throw error;
           result = data;
         } else {
+          console.log('POST /api/patients - Creating new patient:', device_id);
           // Create new patient
           const { data, error } = await supabase
             .from('patients')
@@ -106,12 +129,14 @@ module.exports = async (req, res) => {
           result = data;
         }
 
-        return sendResponse(res, 201, {
+        const responseData = {
           message: existing ? 'Patient updated' : 'Patient created',
           patient: result,
-        });
+        };
+        console.log('POST /api/patients - Sending response:', responseData);
+        return sendResponse(res, 201, responseData);
       } catch (error) {
-        console.error('Error in POST /api/patients:', error);
+        console.error('Error in POST /api/patients:', error.message, error.stack);
         return sendError(res, 500, error);
       }
     }
