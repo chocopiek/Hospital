@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
-import axios from 'axios';
 import useSocket from '../hooks/useSocket';
 import AlertRow from '../components/AlertRow';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function Alerts() {
   const [alerts, setAlerts] = useState([]);
@@ -39,11 +36,13 @@ export function Alerts() {
   const fetchAlerts = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_URL}/api/alerts`);
-      setAlerts(response.data);
+      const response = await fetch('/api/alerts');
+      const data = await response.json();
+      setAlerts(data.alerts || []);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching alerts:', error);
+      setAlerts([]);
       setIsLoading(false);
     }
   };

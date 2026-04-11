@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { Check, AlertTriangle, AlertCircle, Info } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function AlertRow({ alert, onAcknowledge }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,9 +7,13 @@ export function AlertRow({ alert, onAcknowledge }) {
   const handleAcknowledge = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/api/alerts/${alert.id}/acknowledge`);
+      const response = await fetch(`/api/alerts/${alert.id}/acknowledge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
       if (onAcknowledge) {
-        onAcknowledge(alert.id, response.data.unreadCount);
+        onAcknowledge(alert.id);
       }
     } catch (error) {
       console.error('Error acknowledging alert:', error);

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function Settings() {
   const [patients, setPatients] = useState([]);
@@ -14,7 +11,7 @@ export function Settings() {
     device_id: '',
     name: '',
     age: '',
-    diagnosis: '',
+    notes: '',
   });
 
   useEffect(() => {
@@ -25,11 +22,11 @@ export function Settings() {
     try {
       setIsLoading(true);
       const [patientsRes, devicesRes] = await Promise.all([
-        axios.get(`${API_URL}/api/patients`),
-        axios.get(`${API_URL}/api/devices`),
+        fetch('/api/patients').then(r => r.json()),
+        fetch('/api/devices').then(r => r.json()),
       ]);
-      setPatients(patientsRes.data);
-      setDevices(devicesRes.data);
+      setPatients(patientsRes);
+      setDevices(devicesRes);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -39,61 +36,71 @@ export function Settings() {
 
   const handleAddPatient = async () => {
     if (!formData.device_id || !formData.name) {
-      alert('Please fill in device_id and name');
+      alert('Please select a bed and enter patient name');
       return;
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/patients`, {
-        device_id: formData.device_id,
-        name: formData.name,
-        age: formData.age ? parseInt(formData.age) : null,
-        diagnosis: formData.diagnosis || null,
+      const response = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_id: formData.device_id,
+          name: formData.name,
+          age: formData.age ? parseInt(formData.age) : null,
+          notes: formData.notes || null,
+        }),
       });
+      const data = await response.json();
 
-      setPatients([...patients, response.data.patient]);
+      setPatients([...patients, data.patient]);
       setFormData({
         device_id: '',
         name: '',
         age: '',
-        diagnosis: '',
+        notes: '',
       });
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding patient:', error);
-      alert('Error adding patient: ' + error.response?.data?.error);
+      alert('Error adding patient');
     }
   };
 
   const handleUpdatePatient = async () => {
     if (!formData.device_id || !formData.name) {
-      alert('Please fill in device_id and name');
+      alert('Please fill in device and name');
       return;
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/patients`, {
-        device_id: formData.device_id,
-        name: formData.name,
-        age: formData.age ? parseInt(formData.age) : null,
-        diagnosis: formData.diagnosis || null,
+      const response = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_id: formData.device_id,
+          name: formData.name,
+          age: formData.age ? parseInt(formData.age) : null,
+          notes: formData.notes || null,
+        }),
       });
+      const data = await response.json();
 
       setPatients(
         patients.map((p) =>
-          p.device_id === formData.device_id ? response.data.patient : p
+          p.device_id === formData.device_id ? data.patient : p
         )
       );
       setFormData({
         device_id: '',
         name: '',
         age: '',
-        diagnosis: '',
+        notes: '',
       });
       setEditingId(null);
     } catch (error) {
       console.error('Error updating patient:', error);
-      alert('Error updating patient: ' + error.response?.data?.error);
+      alert('Error updating patient');
     }
   };
 
@@ -101,7 +108,10 @@ export function Settings() {
     if (!confirm('Are you sure you want to delete this patient?')) return;
 
     try {
-      await axios.delete(`${API_URL}/api/patients/${device_id}`);
+      await fetch(`/api/patients/${device_id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
       setPatients(patients.filter((p) => p.device_id !== device_id));
     } catch (error) {
       console.error('Error deleting patient:', error);
@@ -114,7 +124,7 @@ export function Settings() {
       device_id: patient.device_id,
       name: patient.name,
       age: patient.age || '',
-      diagnosis: patient.diagnosis || '',
+      notes: patient.notes || '',
     });
     setEditingId(patient.device_id);
   };
@@ -124,17 +134,10 @@ export function Settings() {
       device_id: '',
       name: '',
       age: '',
-      diagnosis: '',
+      notes: '',
     });
     setShowAddForm(false);
     setEditingId(null);
-  };
-
-  const getDeviceName = (device_id) => {
-    const device = devices.find((d) => d.device_id === device_id);
-    return device
-      ? `${device.device_id} (Building ${device.building} - Floor ${device.floor} - Room ${device.room})`
-      : device_id;
   };
 
   return (
@@ -171,23 +174,18 @@ export function Settings() {
               {/* Device Selection */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Device <span className="text-red-500">*</span>
+                  Bed <span className="text-red-500">*</span>
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.device_id}
                   onChange={(e) =>
                     setFormData({ ...formData, device_id: e.target.value })
                   }
                   disabled={editingId}
+                  placeholder="Enter bed ID (e.g., BED-A1-1)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                >
-                  <option value="">Select a device</option>
-                  {devices.map((device) => (
-                    <option key={device.device_id} value={device.device_id}>
-                      {getDeviceName(device.device_id)}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Patient Name */}
@@ -222,18 +220,18 @@ export function Settings() {
                 />
               </div>
 
-              {/* Diagnosis */}
+              {/* Notes */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Diagnosis
+                  Notes
                 </label>
                 <input
                   type="text"
-                  value={formData.diagnosis}
+                  value={formData.notes}
                   onChange={(e) =>
-                    setFormData({ ...formData, diagnosis: e.target.value })
+                    setFormData({ ...formData, notes: e.target.value })
                   }
-                  placeholder="Enter diagnosis"
+                  placeholder="Enter medical notes"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>

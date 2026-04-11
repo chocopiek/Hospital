@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, AlertCircle, Wifi, Bed } from 'lucide-react';
-import axios from 'axios';
 import useSocket from '../hooks/useSocket';
 import BedTile from '../components/BedTile';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function Dashboard({ navigateToAlerts, onNavigateReset }) {
   const [buildings, setBuildings] = useState({});
@@ -53,19 +50,22 @@ export function Dashboard({ navigateToAlerts, onNavigateReset }) {
 
   const fetchBuildingData = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/buildings`);
-      setBuildings(response.data);
+      const response = await fetch('/api/buildings');
+      const data = await response.json();
+      setBuildings(data);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching buildings:', error);
+      setBuildings({});
       setIsLoading(false);
     }
   };
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/stats`);
-      setStats(response.data);
+      const response = await fetch('/api/stats');
+      const data = await response.json();
+      setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }

@@ -11,12 +11,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import axios from 'axios';
 import useSocket from '../hooks/useSocket';
 import VitalCard from '../components/VitalCard';
 import AlertRow from '../components/AlertRow';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
 
 export function BedDetail() {
   const { device_id } = useParams();
@@ -48,22 +45,22 @@ export function BedDetail() {
     try {
       setIsLoading(true);
       const [vitalsRes, alertsRes, buildingsRes] = await Promise.all([
-        axios.get(`${API_URL}/api/bed/${device_id}/vitals?limit=100`),
-        axios.get(`${API_URL}/api/alerts?type=ALL`),
-        axios.get(`${API_URL}/api/buildings`),
+        fetch(`/api/bed/${device_id}/vitals?limit=100`).then(r => r.json()),
+        fetch('/api/alerts').then(r => r.json()),
+        fetch('/api/buildings').then(r => r.json()),
       ]);
 
-      const bedVitals = vitalsRes.data.vitals;
+      const bedVitals = vitalsRes.vitals || [];
       setVitals(bedVitals);
-      setDevice(vitalsRes.data.device);
+      setDevice(vitalsRes.device);
 
       // Get patient info
-      if (vitalsRes.data.device.device_id) {
+      if (vitalsRes.device?.device_id) {
         // Patient info would be included in the device or fetched separately
       }
 
       // Filter alerts for this device
-      const deviceAlerts = alertsRes.data.filter((a) => a.device_id === device_id);
+      const deviceAlerts = (alertsRes.alerts || []).filter((a) => a.device_id === device_id);
       setAlerts(deviceAlerts);
 
       setIsLoading(false);
