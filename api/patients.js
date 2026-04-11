@@ -77,6 +77,34 @@ module.exports = async (req, res) => {
           return sendError(res, 400, { message: 'device_id and name are required' });
         }
 
+        // Ensure device exists (create if not)
+        const { data: existingDevice, error: deviceCheckError } = await supabase
+          .from('devices')
+          .select('id')
+          .eq('device_id', device_id)
+          .single();
+
+        if (deviceCheckError && deviceCheckError.code === 'PGRST116') {
+          // Device doesn't exist, create a basic one
+          console.log('POST /api/patients - Creating device:', device_id);
+          const { error: deviceCreateError } = await supabase
+            .from('devices')
+            .insert({
+              device_id,
+              building: 'Hospital',
+              floor: 1,
+              room: 'General',
+              bed: 1,
+            });
+
+          if (deviceCreateError) {
+            console.error('POST /api/patients - Error creating device:', deviceCreateError);
+            throw new Error('Could not create device for patient: ' + deviceCreateError.message);
+          }
+        } else if (deviceCheckError) {
+          throw deviceCheckError;
+        }
+
         // Check if patient already exists
         const { data: existing, error: checkError } = await supabase
           .from('patients')
