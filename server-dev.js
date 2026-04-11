@@ -45,25 +45,6 @@ const apiHandlers = {
   '/api/data': require('./api/data'),
 };
 
-// Dynamic route patterns
-const dynamicRoutes = [
-  {
-    pattern: /^\/api\/patients\/([^/]+)$/,
-    handler: (match) => require('./api/patients/[device_id].js'),
-    paramName: 'device_id',
-  },
-  {
-    pattern: /^\/api\/bed\/([^/]+)\/vitals$/,
-    handler: (match) => require('./api/bed/[device_id]/vitals.js'),
-    paramName: 'device_id',
-  },
-  {
-    pattern: /^\/api\/alerts\/([^/]+)\/acknowledge$/,
-    handler: (match) => require('./api/alerts/[id]/acknowledge.js'),
-    paramName: 'id',
-  },
-];
-
 const server = http.createServer(async (nodeReq, nodeRes) => {
   const pathname = url.parse(nodeReq.url).pathname;
   
@@ -82,27 +63,12 @@ const server = http.createServer(async (nodeReq, nodeRes) => {
   // Find matching API handler
   let handler = null;
   let handlerPath = pathname;
-  let params = {};
   
-  // Check dynamic routes first
-  for (const route of dynamicRoutes) {
-    const match = pathname.match(route.pattern);
-    if (match) {
-      handler = route.handler(match);
-      params[route.paramName] = match[1];
-      handlerPath = pathname;
+  for (const [path, fn] of Object.entries(apiHandlers)) {
+    if (pathname === path || pathname.startsWith(path + '/')) {
+      handler = fn;
+      handlerPath = path;
       break;
-    }
-  }
-
-  // Fall back to static routes
-  if (!handler) {
-    for (const [path, fn] of Object.entries(apiHandlers)) {
-      if (pathname === path || pathname.startsWith(path + '/')) {
-        handler = fn;
-        handlerPath = path;
-        break;
-      }
     }
   }
 
@@ -115,9 +81,6 @@ const server = http.createServer(async (nodeReq, nodeRes) => {
   // Create mock request with parsed body
   const req = createMockReq(nodeReq);
   const res = createMockRes(nodeRes);
-  
-  // Add query parameters
-  req.query = params;
 
   // Parse request body
   try {
