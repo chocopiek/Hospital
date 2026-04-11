@@ -1,6 +1,32 @@
 const { supabase, sendResponse, sendError, handleOptions } = require('./_supabase');
 
 /**
+ * Helper to parse request body
+ */
+const parseBody = async (req) => {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    
+    // If body is already parsed (Vercel with middleware)
+    if (req.body) {
+      resolve(typeof req.body === 'string' ? JSON.parse(req.body) : req.body);
+      return;
+    }
+    
+    // Otherwise, read from stream
+    req.on('data', chunk => body += chunk.toString());
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(new Error('Invalid JSON body: ' + e.message));
+      }
+    });
+    req.once('error', reject);
+  });
+};
+
+/**
  * GET /api/patients - Get all patients
  * POST /api/patients - Create or update patient
  * DELETE /api/patients/:device_id - Delete patient
@@ -28,7 +54,7 @@ module.exports = async (req, res) => {
     // POST - Create or update patient
     if (req.method === 'POST') {
       try {
-        const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const payload = await parseBody(req);
         const { device_id, name, age, gender, room_number, notes } = payload;
 
         if (!device_id || !name) {
