@@ -51,9 +51,18 @@ export function Settings() {
           notes: formData.notes || null,
         }),
       });
-      const data = await response.json();
 
-      setPatients([...patients, data.patient]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.patient) {
+        setPatients([...patients, data.patient]);
+      }
+      
+      alert('Patient added successfully!');
       setFormData({
         device_id: '',
         name: '',
@@ -63,7 +72,7 @@ export function Settings() {
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding patient:', error);
-      alert('Error adding patient');
+      alert('Error adding patient: ' + error.message);
     }
   };
 
@@ -84,13 +93,22 @@ export function Settings() {
           notes: formData.notes || null,
         }),
       });
-      const data = await response.json();
 
-      setPatients(
-        patients.map((p) =>
-          p.device_id === formData.device_id ? data.patient : p
-        )
-      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.patient) {
+        setPatients(
+          patients.map((p) =>
+            p.device_id === formData.device_id ? data.patient : p
+          )
+        );
+      }
+
+      alert('Patient updated successfully!');
       setFormData({
         device_id: '',
         name: '',
@@ -100,7 +118,7 @@ export function Settings() {
       setEditingId(null);
     } catch (error) {
       console.error('Error updating patient:', error);
-      alert('Error updating patient');
+      alert('Error updating patient: ' + error.message);
     }
   };
 
@@ -108,14 +126,21 @@ export function Settings() {
     if (!confirm('Are you sure you want to delete this patient?')) return;
 
     try {
-      await fetch(`/api/patients/${device_id}`, {
+      const response = await fetch(`/api/patients/${device_id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      }
+
       setPatients(patients.filter((p) => p.device_id !== device_id));
+      alert('Patient deleted successfully!');
     } catch (error) {
       console.error('Error deleting patient:', error);
-      alert('Error deleting patient');
+      alert('Error deleting patient: ' + error.message);
     }
   };
 

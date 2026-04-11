@@ -27,76 +27,67 @@ module.exports = async (req, res) => {
 
     // POST - Create or update patient
     if (req.method === 'POST') {
-      let body = '';
-      req.on('data', (chunk) => {
-        body += chunk.toString();
-      });
+      try {
+        const payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+        const { device_id, name, age, gender, room_number, notes } = payload;
 
-      req.on('end', async () => {
-        try {
-          const payload = JSON.parse(body);
-          const { device_id, name, age, gender, room_number, notes } = payload;
+        if (!device_id || !name) {
+          return sendError(res, 400, { message: 'device_id and name are required' });
+        }
 
-          if (!device_id || !name) {
-            return sendError(res, 400, { message: 'device_id and name are required' });
-          }
+        // Check if patient already exists
+        const { data: existing } = await supabase
+          .from('patients')
+          .select('id')
+          .eq('device_id', device_id)
+          .single();
 
-          // Check if patient already exists
-          const { data: existing } = await supabase
+        let result;
+        if (existing) {
+          // Update existing patient
+          const { data, error } = await supabase
             .from('patients')
-            .select('id')
+            .update({
+              name,
+              age: age || null,
+              gender: gender || null,
+              room_number: room_number || null,
+              notes: notes || null,
+              updated_at: new Date().toISOString(),
+            })
             .eq('device_id', device_id)
+            .select()
             .single();
 
-          let result;
-          if (existing) {
-            // Update existing patient
-            const { data, error } = await supabase
-              .from('patients')
-              .update({
-                name,
-                age: age || null,
-                gender: gender || null,
-                room_number: room_number || null,
-                notes: notes || null,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('device_id', device_id)
-              .select()
-              .single();
+          if (error) throw error;
+          result = data;
+        } else {
+          // Create new patient
+          const { data, error } = await supabase
+            .from('patients')
+            .insert({
+              device_id,
+              name,
+              age: age || null,
+              gender: gender || null,
+              room_number: room_number || null,
+              notes: notes || null,
+            })
+            .select()
+            .single();
 
-            if (error) throw error;
-            result = data;
-          } else {
-            // Create new patient
-            const { data, error } = await supabase
-              .from('patients')
-              .insert({
-                device_id,
-                name,
-                age: age || null,
-                gender: gender || null,
-                room_number: room_number || null,
-                notes: notes || null,
-              })
-              .select()
-              .single();
-
-            if (error) throw error;
-            result = data;
-          }
-
-          return sendResponse(res, 201, {
-            message: existing ? 'Patient updated' : 'Patient created',
-            patient: result,
-          });
-        } catch (error) {
-          console.error('Error in POST /api/patients:', error);
-          return sendError(res, 500, error);
+          if (error) throw error;
+          result = data;
         }
-      });
 
-      return;
+        return sendResponse(res, 201, {
+          message: existing ? 'Patient updated' : 'Patient created',
+          patient: result,
+        });
+      } catch (error) {
+        console.error('Error in POST /api/patients:', error);
+        return sendError(res, 500, error);
+      }
     }
 
     // DELETE - Remove patient
