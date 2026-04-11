@@ -167,9 +167,36 @@ export function Settings() {
         headers: { 'Content-Type': 'application/json' },
       });
 
+      // Handle error responses
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        } catch (e) {
+          // If we can't parse JSON, it's likely HTML error page
+          try {
+            const text = await response.text();
+            if (text.includes('<')) {
+              throw new Error(`HTTP ${response.status}: Server error`);
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          } catch (textError) {
+            throw new Error(`HTTP ${response.status}: Delete failed`);
+          }
+        }
+      }
+
+      // Parse success response
+      let data;
+      try {
+        const text = await response.text();
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        throw new Error('Invalid response from server: ' + e.message);
       }
 
       setPatients(patients.filter((p) => p.device_id !== device_id));

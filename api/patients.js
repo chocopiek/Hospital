@@ -42,6 +42,7 @@ const parseBody = async (req) => {
 /**
  * GET /api/patients - Get all patients
  * POST /api/patients - Create or update patient
+ * DELETE /api/patients/:device_id - Delete patient
  */
 module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') {
@@ -61,6 +62,44 @@ module.exports = async (req, res) => {
       }
 
       return sendResponse(res, 200, patients || []);
+    }
+
+    // DELETE - Remove patient by device_id from URL
+    if (req.method === 'DELETE') {
+      // Extract device_id from URL path: /api/patients/DEVICE-ID
+      const urlPath = req.url || '';
+      const pathParts = urlPath.split('?')[0].split('/').filter(Boolean);
+      
+      // pathParts should be ['api', 'patients', 'DEVICE-ID']
+      let device_id = null;
+      if (pathParts.length >= 3 && pathParts[0] === 'api' && pathParts[1] === 'patients') {
+        device_id = pathParts[2];
+      }
+
+      // Fallback: check req.query (for dynamic routes)
+      if (!device_id && req.query && req.query.device_id) {
+        device_id = req.query.device_id;
+      }
+
+      if (!device_id) {
+        return sendError(res, 400, { message: 'device_id is required' });
+      }
+
+      console.log('DELETE /api/patients - Deleting patient:', device_id);
+
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('device_id', device_id);
+
+      if (error) {
+        console.error('DELETE /api/patients - Error:', error);
+        throw error;
+      }
+
+      return sendResponse(res, 200, {
+        message: 'Patient deleted',
+      });
     }
 
     // POST - Create or update patient
